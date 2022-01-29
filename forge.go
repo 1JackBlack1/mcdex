@@ -112,7 +112,7 @@ func installForge(context forgeContext) (string, error) {
 	logAction("Downloading Forge %s\n", context.forgeVsn)
 
 	// Download the Forge installer (into memory)
-	resp, err := HttpGet(forgeURL)
+	resp, err := HttpGetRetry(forgeURL)
 	if err != nil {
 		return "", fmt.Errorf("download failed: %+v", err)
 	}
@@ -346,7 +346,7 @@ func downloadXzPack(url, filename string) error {
 
 	// Construct the URL to download
 	finalURL := fmt.Sprintf("%s.pack.xz", url)
-	resp, err := HttpGet(finalURL)
+	resp, err := HttpGetRetry(finalURL)
 	if err != nil {
 		return fmt.Errorf("failed to download %s: %+v", finalURL, err)
 	}
@@ -406,7 +406,7 @@ func downloadJar(url, filename string) error {
 	filename = filepath.Base(filename)
 
 	// Construct the URL to download
-	resp, err := HttpGet(url)
+	resp, err := HttpGetRetry(url)
 	if err != nil {
 		return fmt.Errorf("failed to download %s: %+v", url, err)
 	}

@@ -85,8 +85,37 @@ func HttpGet(url string) (*http.Response, error) {
 	return getterClient.Do(req)
 }
 
+func HttpGetRetry(url string) (*http.Response, error) {
+	for i:=1; i<=10; i++{
+		slp:=time.Duration(i*5)*time.Second
+		resp, err := HttpGet(url)
+		if err != nil {
+			if i < 10 {
+				fmt.Printf("Failed to get data. Sleeping for %d seconds.\n", i*5)
+				time.Sleep(slp);
+				continue
+			} else {
+				return resp, err
+			}
+		}
+
+		if resp.StatusCode != 200 {
+			if i < 10 {
+				fmt.Printf("Failed to get data. Sleeping for %d seconds.\n", i*5)
+				time.Sleep(slp);
+				resp.Body.Close()
+				continue
+			} else {
+				return resp, err
+			}
+		}
+		return resp, err
+	}
+	return nil, fmt.Errorf("Unexpected return from HttpGetRetry function\n")
+}
+
 func downloadHttpFile(url string, targetFile string) error {
-	resp, err := HttpGet(url)
+	resp, err := HttpGetRetry(url)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve %s: %+v", url, err)
 	}
@@ -104,7 +133,7 @@ func downloadHttpFile(url string, targetFile string) error {
 
 func downloadHttpFileToDir(url string, targetDir string, skipIfExists bool) (string, error) {
 	// Start the download
-	resp, err := HttpGet(url)
+	resp, err := HttpGetRetry(url)
 	if err != nil {
 		return "", fmt.Errorf("failed to download %s: %+v", url, err)
 	}
@@ -210,7 +239,7 @@ func dirExists(dirname string) bool {
 }
 
 func readStringFromUrl(url string) (string, error) {
-	res, err := HttpGet(url)
+	res, err := HttpGetRetry(url)
 	if err != nil {
 		return "", fmt.Errorf("Failed to read string from %s: %+v", url, err)
 	}
@@ -293,7 +322,7 @@ func stripBadUTF8(s string) string {
 }
 
 func getJSONFromURL(url string) (*gabs.Container, error) {
-	res, e := HttpGet(url)
+	res, e := HttpGetRetry(url)
 	if e != nil {
 		return nil, fmt.Errorf("Failed to complete HTTP request: %s %+v", url, e)
 	}
